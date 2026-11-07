@@ -5,34 +5,36 @@ type ReadingCtx = { simple: boolean; toggle: (x?: number, y?: number) => void };
 const Ctx = createContext<ReadingCtx>({ simple: false, toggle: () => {} });
 export const useReading = () => useContext(Ctx);
 
-const PAINT = {
-  simple: ["#ff6fa8", "#ffa8cc", "#ffd0e2", "#fff6fa"],
-  dark: ["#7fd3ff", "#c5d3e4", "#26405c", "#050810"],
+// Couleurs de la vague d'eau (de la plus vive à la couleur finale du thème)
+const WATER = {
+  simple: ["#ffffff", "#dfe6f0", "#b9c5d6", "#eef2f7"],
+  dark: ["#bfe6ff", "#7fd3ff", "#26405c", "#050810"],
 };
-const SPLATS: [number, number][] = [
-  [-60, -20], [-45, -45], [-20, -60], [-70, -5], [-30, -30], [-80, -35], [-10, -75], [-55, -60],
+// Gouttelettes : [dx, dy] en vmin (dy négatif = vers le haut)
+const DROPS: [number, number][] = [
+  [-30, -55], [-18, -70], [-5, -80], [10, -72], [22, -60],
+  [-38, -40], [30, -45], [-12, -62], [4, -88], [16, -78],
 ];
 
-function PaintOverlay({ x, y, toSimple }: { x: number; y: number; toSimple: boolean }) {
-  const colors = toSimple ? PAINT.simple : PAINT.dark;
+function WaterOverlay({ x, y, toSimple }: { x: number; y: number; toSimple: boolean }) {
+  const c = toSimple ? WATER.simple : WATER.dark;
   const vars = { "--x": `${x}px`, "--y": `${y}px` } as CSSProperties;
   return (
     <div aria-hidden className="paint-out pointer-events-none fixed inset-0 z-[200]" style={vars}>
-      {colors.map((c, i) => (
-        <div key={c} className="paint-layer" style={{ background: c, animationDelay: `${i * 0.12}s` }} />
+      <div className="jet" style={{ left: x - 9, top: 0, height: y, background: `linear-gradient(to top, ${c[1]}, ${c[0]})` }} />
+      {c.map((col, i) => (
+        <div key={col} className="paint-layer" style={{ background: col, animationDelay: `${0.45 + i * 0.12}s` }} />
       ))}
-      {SPLATS.map(([dx, dy], i) => {
-        const size = `${4 + (i % 3) * 2}vmin`;
+      {DROPS.map(([dx, dy], i) => {
+        const size = `${1.2 + (i % 3) * 0.6}vmin`;
         return (
           <div
             key={i}
-            className="splat"
+            className="drop"
             style={
               {
-                left: x, top: y, width: size, height: size,
-                background: colors[i % 2],
-                "--dx": `${dx}vmin`, "--dy": `${dy}vmin`,
-                animationDelay: `${i * 0.04}s`,
+                left: x, top: y, width: size, height: size, background: c[i % 2],
+                "--dx": `${dx}vmin`, "--dy": `${dy}vmin`, animationDelay: `${0.1 + i * 0.03}s`,
               } as CSSProperties
             }
           />
@@ -44,7 +46,7 @@ function PaintOverlay({ x, y, toSimple }: { x: number; y: number; toSimple: bool
 
 export function ReadingProvider({ children }: { children: ReactNode }) {
   const [simple, setSimple] = useState(false);
-  const [paint, setPaint] = useState<{ x: number; y: number; to: boolean } | null>(null);
+  const [water, setWater] = useState<{ x: number; y: number; to: boolean } | null>(null);
   const busy = useRef(false);
 
   useEffect(() => {
@@ -69,15 +71,15 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced || x === undefined || y === undefined) { apply(next); return; }
     busy.current = true;
-    setPaint({ x, y, to: next });
-    setTimeout(() => apply(next), 1000);          // le thème change sous la peinture
-    setTimeout(() => { setPaint(null); busy.current = false; }, 2100);
+    setWater({ x, y, to: next });
+    setTimeout(() => apply(next), 1500);                 // le thème change sous la vague
+    setTimeout(() => { setWater(null); busy.current = false; }, 2750);
   };
 
   return (
     <Ctx.Provider value={{ simple, toggle }}>
       {children}
-      {paint && <PaintOverlay x={paint.x} y={paint.y} toSimple={paint.to} />}
+      {water && <WaterOverlay x={water.x} y={water.y} toSimple={water.to} />}
     </Ctx.Provider>
   );
 }
@@ -99,7 +101,6 @@ export function ModeToggle() {
   );
 }
 
-// Petits points flottants (positions fixes, pas d'aléatoire)
 const DOTS = [
   [12, 22, 10], [78, 14, 14], [90, 52, 8], [30, 68, 12], [64, 82, 9], [8, 88, 11],
 ];
@@ -114,7 +115,7 @@ export function Ambient() {
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse at 20% 0%, #ffe3ef, transparent 55%), radial-gradient(ellipse at 90% 100%, #ffd7e8, transparent 50%)",
+              "radial-gradient(ellipse at 20% 0%, #ffffff, transparent 55%), radial-gradient(ellipse at 90% 100%, #dde4ee, transparent 50%)",
           }}
         />
         <div className="liquid" style={{ width: "46vmax", height: "46vmax", left: "-12vmax", top: "8vh" }} />
@@ -128,7 +129,7 @@ export function Ambient() {
             style={
               {
                 left: `${l}%`, top: `${t}%`, width: s, height: s,
-                background: "rgba(214,63,130,0.28)",
+                background: "rgba(90,110,140,0.25)",
                 "--d": `${8 + i}s`, "--dl": `${-i * 1.7}s`, "--fx": "8px",
               } as CSSProperties
             }

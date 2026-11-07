@@ -19,15 +19,17 @@ function webglOk() {
   } catch { return false; }
 }
 
-// La scène n'existe que si WebGL est OK, visible à l'écran, et hors mode simple
-export default function Safe3D({ children, className = "" }: { children: ReactNode; className?: string }) {
+export default function Safe3D({
+  children, className = "", fallback = null,
+}: { children: ReactNode; className?: string; fallback?: ReactNode }) {
   const { simple } = useReading();
   const { ref, seen } = useInView(false, "100px 0px");
   const [ok, setOk] = useState(false);
   useEffect(() => setOk(webglOk()), []);
+  const live = ok && seen && !simple;
   return (
     <div ref={ref} className={`scene3d ${className}`}>
-      {ok && seen && !simple ? <Boundary>{children}</Boundary> : null}
+      {live ? <Boundary>{children}</Boundary> : fallback}
     </div>
   );
 }

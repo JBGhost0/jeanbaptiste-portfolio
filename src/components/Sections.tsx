@@ -58,71 +58,37 @@ export function About() {
 }
 
 /* 02 — DOUBLE COMPÉTENCE : branches d'ADN */
-function DnaDefs() {
-  return (
-    <svg width="0" height="0" aria-hidden className="absolute">
-      <defs>
-        <pattern id="dna-tile" width="56" height="80" patternUnits="userSpaceOnUse">
-          <path d="M10 0C10 20 46 20 46 40C46 60 10 60 10 80" fill="none" strokeWidth="2" style={{ stroke: "var(--lime)" }} />
-          <path d="M46 0C46 20 10 20 10 40C10 60 46 60 46 80" fill="none" strokeWidth="2" style={{ stroke: "var(--amber)" }} />
-          <path d="M10 40H46M10 0H46" fill="none" strokeWidth="1.5" style={{ stroke: "var(--muted)", opacity: 0.6 }} />
-        </pattern>
-      </defs>
-    </svg>
-  );
-}
+/* 02 — DOUBLE COMPÉTENCE : liaisons chimiques 3D */
+type Sel = { side: "agro" | "dev"; i: number } | null;
 
-function SkillList({ title, color, groups }: { title: string; color: string; groups: Group[] }) {
-  const [open, setOpen] = useState(-1);
+function SkillPicker({
+  side, title, color, groups, sel, onSel,
+}: {
+  side: "agro" | "dev"; title: string; color: string; groups: Group[];
+  sel: Sel; onSel: (s: Sel) => void;
+}) {
+  const accent = side === "agro" ? "var(--lime)" : "var(--amber)";
   return (
     <div>
       <h3 className={`mb-4 font-display text-2xl ${color}`}>{title}</h3>
       <div className="space-y-3">
         {groups.map((g, i) => {
-          const o = open === i;
+          const on = sel?.side === side && sel.i === i;
           return (
-            <Reveal key={g.name} v={title === "Agro" ? "left" : "right"} delay={i * 0.06}>
-              <div className="glass overflow-hidden rounded-3xl">
-                <button onClick={() => setOpen(o ? -1 : i)} aria-expanded={o} className="flex w-full items-center gap-4 p-5 text-left">
-                  <span className="font-mono text-xs text-muted">0{i + 1}</span>
-                  <span className="flex-1">
-                    <span className="block font-display text-lg">{g.name}</span>
-                    <span className="block text-sm text-muted">{g.summary}</span>
-                  </span>
-                  <span className={`text-2xl transition-transform duration-300 ${color} ${o ? "rotate-45" : ""}`}>+</span>
-                </button>
-                <div className="grid transition-[grid-template-rows] duration-700" style={{ gridTemplateRows: o ? "1fr" : "0fr" }}>
-                  <div className="overflow-hidden">
-                    <div className="flex gap-4 px-5 pb-5 pt-1">
-                      <div className="relative w-14 shrink-0">
-                        <div
-                          className="absolute inset-0"
-                          style={{ clipPath: o ? "inset(0 0 0 0)" : "inset(0 0 100% 0)", transition: "clip-path 1.4s ease" }}
-                        >
-                          <svg className="h-full w-14" aria-hidden>
-                            <rect width="100%" height="100%" fill="url(#dna-tile)" />
-                          </svg>
-                        </div>
-                      </div>
-                      <ul className="flex-1 space-y-4">
-                        {g.items.map((it, k) => (
-                          <li
-                            key={it.name}
-                            style={{
-                              opacity: o ? 1 : 0,
-                              transform: o ? "none" : "translateX(-16px)",
-                              transition: `opacity .6s ease ${o ? 0.3 + k * 0.18 : 0}s, transform .6s ease ${o ? 0.3 + k * 0.18 : 0}s`,
-                            }}
-                          >
-                            <p className="font-display">{it.name}</p>
-                            <p className="text-sm text-muted">{it.text}</p>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <Reveal key={g.name} v={side === "agro" ? "left" : "right"} delay={i * 0.06}>
+              <button
+                onClick={() => onSel(on ? null : { side, i })}
+                aria-pressed={on}
+                className="glass glass-hover flex w-full items-center gap-4 rounded-3xl p-5 text-left"
+                style={on ? { borderColor: accent } : undefined}
+              >
+                <span className="font-mono text-xs text-muted">0{i + 1}</span>
+                <span className="flex-1">
+                  <span className="block font-display text-lg">{g.name}</span>
+                  <span className="block text-sm text-muted">{g.summary}</span>
+                </span>
+                <span className={`text-xl transition-transform duration-300 ${color} ${on ? "rotate-90" : ""}`}>→</span>
+              </button>
             </Reveal>
           );
         })}
@@ -133,13 +99,21 @@ function SkillList({ title, color, groups }: { title: string; color: string; gro
 
 export function Skills() {
   const { simple } = useReading();
+  const [sel, setSel] = useState<Sel>(null);
+  const group = sel ? skills[sel.side][sel.i] : null;
+  const branch =
+    sel && group
+      ? { side: (sel.side === "agro" ? -1 : 1) as 1 | -1, count: group.items.length, id: `${sel.side}${sel.i}` }
+      : null;
+  const accent = sel?.side === "dev" ? "text-amber" : "text-lime";
+
   const cols: [string, string, Group[]][] = [
     ["Agro", "text-lime", skills.agro],
     ["Dev", "text-amber", skills.dev],
   ];
+
   return (
     <Section id="competences" n="02" title="Double compétence">
-      <DnaDefs />
       {simple ? (
         <div className="space-y-12">
           {cols.map(([t, c, gs]) => (
@@ -167,16 +141,43 @@ export function Skills() {
           ))}
         </div>
       ) : (
-        <>
-          <div className="grid items-start gap-8 lg:grid-cols-[1fr_200px_1fr]">
-            <SkillList title="Agro" color="text-lime" groups={skills.agro} />
-            <Safe3D className="hidden h-72 lg:block">
-              <Molecule3D />
+        <div className="grid items-start gap-8 lg:grid-cols-[1fr_1.25fr_1fr]">
+          <SkillPicker side="agro" title="Agro" color="text-lime" groups={skills.agro} sel={sel} onSel={setSel} />
+
+          <div className="order-first lg:order-none">
+            <Safe3D
+              className="h-[340px] sm:h-[420px]"
+              fallback={<div className="morph glass mx-auto mt-16 h-40 w-40" />}
+            >
+              <Molecule3D branch={branch} />
             </Safe3D>
-            <SkillList title="Dev" color="text-amber" groups={skills.dev} />
+
+            <div key={sel ? `${sel.side}${sel.i}` : "none"} className="rise glass mt-4 min-h-[150px] rounded-3xl p-5" aria-live="polite">
+              {group ? (
+                <>
+                  <p className={`font-mono text-xs tracking-widest ${accent}`}>{group.name.toUpperCase()}</p>
+                  <ul className="mt-3 space-y-3">
+                    {group.items.map((it, k) => (
+                      <li key={it.name} className="flex gap-3">
+                        <span className={`font-mono text-sm ${accent}`}>{k + 1}</span>
+                        <span>
+                          <span className="block font-display">{it.name}</span>
+                          <span className="block text-sm text-muted">{it.text}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-sm text-muted">
+                  Cliquez sur une compétence : une liaison se forme depuis la molécule et fait apparaître les sous-compétences.
+                </p>
+              )}
+            </div>
           </div>
-          <p className="mt-8 text-center font-mono text-xs text-muted">Cliquez sur une compétence pour dérouler sa branche</p>
-        </>
+
+          <SkillPicker side="dev" title="Dev" color="text-amber" groups={skills.dev} sel={sel} onSel={setSel} />
+        </div>
       )}
     </Section>
   );
