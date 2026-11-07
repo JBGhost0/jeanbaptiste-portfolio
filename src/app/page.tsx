@@ -1,30 +1,23 @@
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
-
-const sections = [
-  ["apropos", "À propos"],
-  ["competences", "Double compétence"],
-  ["parcours", "Parcours"],
-  ["experience", "Expérience"],
-  ["projets", "Projets"],
-  ["realisations", "Réalisations"],
-  ["passe-temps", "Passe-temps"],
-  ["contact", "Contact"],
-];
+import { About, Skills, Journey, Experience, Projects, Gallery, Hobbies, Contact } from "@/components/Sections";
 
 export default function Home() {
   return (
     <main>
       <Nav />
       <Hero />
-      {sections.map(([id, title]) => (
-        <section key={id} id={id} className="mx-auto flex min-h-[60vh] max-w-6xl items-center px-6 py-24">
-          <h2 className="font-display text-4xl font-bold">
-            {title}
-            <span className="text-lime">.</span>
-          </h2>
-        </section>
-      ))}
+      <About />
+      <Skills />
+      <Journey />
+      <Experience />
+      <Projects />
+      <Gallery />
+      <Hobbies />
+      <Contact />
+      <footer className="border-t border-white/5 py-8 text-center font-mono text-xs text-muted">
+        © {new Date().getFullYear()} Jean-Baptiste Mahougnon DADA
+      </footer>
     </main>
   );
 }

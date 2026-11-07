@@ -1,11 +1,15 @@
 "use client";
 import dynamic from "next/dynamic";
 import { Component, useEffect, useState, type ReactNode } from "react";
+import { useReading } from "./ReadingMode";
 
 const HeroScene = dynamic(() => import("./HeroScene"), { ssr: false });
 
 // Si la 3D plante, on l'enlève sans casser la page
-class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+class SceneBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
   state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
@@ -22,9 +26,10 @@ class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean
 function webglOk() {
   try {
     const c = document.createElement("canvas");
-    const gl =
-      c.getContext("webgl2", { failIfMajorPerformanceCaveat: true }) ||
-      c.getContext("webgl", { failIfMajorPerformanceCaveat: true });
+    const o = { failIfMajorPerformanceCaveat: true };
+    const gl = (c.getContext("webgl2", o) ||
+      c.getContext("webgl", o)) as WebGLRenderingContext | null;
+    gl?.getExtension("WEBGL_lose_context")?.loseContext();
     return !!gl;
   } catch {
     return false;
@@ -33,29 +38,40 @@ function webglOk() {
 
 export default function Hero() {
   const [show3D, setShow3D] = useState(false);
+  const { simple } = useReading();
 
   useEffect(() => {
+    if (simple) {
+      setShow3D(false);
+      return;
+    }
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (!webglOk()) return;
     const t = setTimeout(() => setShow3D(true), 300);
     return () => clearTimeout(t);
-  }, []);
+  }, [simple]);
 
   return (
-    <section id="accueil" className="relative flex min-h-screen items-center overflow-hidden">
+    <section
+      id="accueil"
+      className="relative flex min-h-screen items-center overflow-hidden"
+    >
       <div
         aria-hidden
         className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_50%,rgba(182,255,60,0.08),transparent_60%)]"
       />
       {show3D && (
-        <div className="absolute inset-0">
+        <div className="scene3d absolute inset-0">
           <SceneBoundary>
             <HeroScene />
           </SceneBoundary>
         </div>
       )}
       <div className="pointer-events-none relative z-10 mx-auto w-full max-w-6xl px-6">
-        <p className="rise font-mono text-sm tracking-widest text-lime" style={{ animationDelay: "0.1s" }}>
+        <p
+          className="rise font-mono text-sm tracking-widest text-lime"
+          style={{ animationDelay: "0.1s" }}
+        >
           AGRONOMIE × CODE
         </p>
         <h1
@@ -66,15 +82,27 @@ export default function Hero() {
           <br />
           <span className="text-lime">Mahougnon</span> DADA
         </h1>
-        <p className="rise mt-6 max-w-xl text-lg text-muted" style={{ animationDelay: "0.45s" }}>
-          Technicien agronome en nutrition et transformation alimentaire,
-          et développeur. Là où la terre rencontre le code.
+        <p
+          className="rise mt-6 max-w-xl text-lg text-muted"
+          style={{ animationDelay: "0.45s" }}
+        >
+          Technicien agronome en nutrition et transformation alimentaire, et
+          développeur. Là où la terre rencontre le code.
         </p>
-        <div className="rise pointer-events-auto mt-10 flex gap-4" style={{ animationDelay: "0.65s" }}>
-          <a href="#projets" className="rounded-full bg-lime px-6 py-3 font-medium text-black transition hover:brightness-110">
+        <div
+          className="rise pointer-events-auto mt-10 flex gap-4"
+          style={{ animationDelay: "0.65s" }}
+        >
+          <a
+            href="#projets"
+            className="rounded-full bg-lime px-6 py-3 font-medium text-black transition hover:brightness-110"
+          >
             Voir mes projets
           </a>
-          <a href="#contact" className="rounded-full border border-white/20 px-6 py-3 transition hover:border-lime hover:text-lime">
+          <a
+            href="#contact"
+            className="rounded-full border border-white/20 px-6 py-3 transition hover:border-lime hover:text-lime"
+          >
             Me contacter
           </a>
         </div>

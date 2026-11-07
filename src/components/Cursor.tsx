@@ -29,7 +29,7 @@ export default function Cursor() {
     <div
       ref={ring}
       aria-hidden
-      className="pointer-events-none fixed left-0 top-0 z-[100] h-7 w-7 rounded-full border border-lime/70 opacity-0 transition-opacity"
+      className="cursor-ring pointer-events-none fixed left-0 top-0 z-[100] h-7 w-7 rounded-full border border-lime/70 opacity-0 transition-opacity"
     />
   );
 }
