@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import SmoothScroll from "@/components/SmoothScroll";
-import Cursor from "@/components/Cursor";
-import { ReadingProvider, ModeToggle, Ambient } from "@/components/ReadingMode";
+import { ReadingProvider } from "@/components/ReadingMode";
+import Chrome from "@/components/Chrome";
 
 const space = Space_Grotesk({ subsets: ["latin"], variable: "--font-space" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -19,14 +18,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" className={`${space.variable} ${inter.variable} ${jb.variable}`}>
       <body>
-        <body>
-  <ReadingProvider>
-    <Ambient />
-    <SmoothScroll>{children}</SmoothScroll>
-    <Cursor />
-    <ModeToggle />
-  </ReadingProvider>
-</body>
+        <ReadingProvider>
+          <Chrome>{children}</Chrome>
+        </ReadingProvider>
       </body>
     </html>
   );

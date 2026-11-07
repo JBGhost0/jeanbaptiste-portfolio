@@ -4,11 +4,13 @@ import dynamic from "next/dynamic";
 import Reveal, { Words, ScrambleTitle } from "./Reveal";
 import Safe3D from "./Safe3D";
 import { useReading } from "./ReadingMode";
-import { about, skills, journey, experiences, projects, gallery, hobbies, contact } from "@/data/content";
+import type { Content } from "@/data/content";
+import { useContent } from "./ContentProvider";
 
 const Molecule3D = dynamic(() => import("./Molecule3D"), { ssr: false });
 const Lab3D = dynamic(() => import("./Lab3D"), { ssr: false });
-type Group = (typeof skills.agro)[number];
+
+type Group = Content["skills"]["agro"][number];
 
 function Section({ id, n, title, children }: { id: string; n: string; title: string; children: ReactNode }) {
   const { simple } = useReading();
@@ -28,6 +30,7 @@ function Section({ id, n, title, children }: { id: string; n: string; title: str
 
 /* 01 — À PROPOS */
 export function About() {
+  const { about } = useContent();
   const { simple } = useReading();
   return (
     <Section id="apropos" n="01" title="À propos">
@@ -46,7 +49,7 @@ export function About() {
           <Reveal delay={0.2}><p className="mt-6 text-muted">{about.more}</p></Reveal>
           <div className={`mt-8 flex flex-wrap gap-3 ${simple ? "justify-center" : ""}`}>
             {about.chips.map((c, i) => (
-              <Reveal key={c} v="scale" delay={0.3 + i * 0.1}>
+              <Reveal key={`${c}-${i}`} v="scale" delay={0.3 + i * 0.1}>
                 <span className="glass rounded-full px-4 py-2 font-mono text-sm">{c}</span>
               </Reveal>
             ))}
@@ -57,7 +60,6 @@ export function About() {
   );
 }
 
-/* 02 — DOUBLE COMPÉTENCE : branches d'ADN */
 /* 02 — DOUBLE COMPÉTENCE : liaisons chimiques 3D */
 type Sel = { side: "agro" | "dev"; i: number } | null;
 
@@ -75,7 +77,7 @@ function SkillPicker({
         {groups.map((g, i) => {
           const on = sel?.side === side && sel.i === i;
           return (
-            <Reveal key={g.name} v={side === "agro" ? "left" : "right"} delay={i * 0.06}>
+            <Reveal key={`${g.name}-${i}`} v={side === "agro" ? "left" : "right"} delay={i * 0.06}>
               <button
                 onClick={() => onSel(on ? null : { side, i })}
                 aria-pressed={on}
@@ -98,6 +100,7 @@ function SkillPicker({
 }
 
 export function Skills() {
+  const { skills } = useContent();
   const { simple } = useReading();
   const [sel, setSel] = useState<Sel>(null);
   const group = sel ? skills[sel.side][sel.i] : null;
@@ -121,13 +124,13 @@ export function Skills() {
               <h3 className={`mb-5 font-display text-2xl ${c}`}>{t}</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {gs.map((g, i) => (
-                  <Reveal key={g.name} delay={i * 0.05}>
+                  <Reveal key={`${g.name}-${i}`} delay={i * 0.05}>
                     <div className="glass h-full rounded-3xl p-6">
                       <h4 className="font-display text-lg">{g.name}</h4>
                       <p className="mt-1 text-sm text-muted">{g.summary}</p>
                       <ul className="mt-4 space-y-2 text-sm">
-                        {g.items.map((it) => (
-                          <li key={it.name}>
+                        {g.items.map((it, k) => (
+                          <li key={`${it.name}-${k}`}>
                             <span className={c}>•</span> <strong className="font-medium">{it.name}</strong>{" "}
                             <span className="text-muted">— {it.text}</span>
                           </li>
@@ -158,7 +161,7 @@ export function Skills() {
                   <p className={`font-mono text-xs tracking-widest ${accent}`}>{group.name.toUpperCase()}</p>
                   <ul className="mt-3 space-y-3">
                     {group.items.map((it, k) => (
-                      <li key={it.name} className="flex gap-3">
+                      <li key={`${it.name}-${k}`} className="flex gap-3">
                         <span className={`font-mono text-sm ${accent}`}>{k + 1}</span>
                         <span>
                           <span className="block font-display">{it.name}</span>
@@ -185,6 +188,7 @@ export function Skills() {
 
 /* 03 — PARCOURS */
 export function Journey() {
+  const { journey } = useContent();
   const box = useRef<HTMLDivElement>(null);
   const line = useRef<HTMLDivElement>(null);
   const { simple } = useReading();
@@ -217,7 +221,7 @@ export function Journey() {
       <Section id="parcours" n="03" title="Parcours">
         <ul className="space-y-5 border-l border-white/10 pl-6">
           {journey.map((j, i) => (
-            <li key={j.title} className="relative">
+            <li key={`${j.title}-${i}`} className="relative">
               <span className="absolute -left-[29px] top-4 h-2 w-2 rounded-full bg-lime" />
               <Reveal delay={i * 0.03}>
                 <div className="glass rounded-2xl p-5">
@@ -242,7 +246,7 @@ export function Journey() {
           {journey.map((j, i) => {
             const left = i % 2 === 0;
             return (
-              <li key={j.title} className={`relative pl-12 md:w-1/2 ${left ? "md:pl-0 md:pr-12 md:text-right" : "md:ml-auto md:pl-12"}`}>
+              <li key={`${j.title}-${i}`} className={`relative pl-12 md:w-1/2 ${left ? "md:pl-0 md:pr-12 md:text-right" : "md:ml-auto md:pl-12"}`}>
                 <span className={`absolute left-[12px] top-3 h-2 w-2 rounded-full bg-lime ${left ? "md:left-auto md:right-[-4px]" : "md:left-[-4px]"}`} />
                 <Reveal v={left ? "left" : "right"}>
                   <div className="glass rounded-3xl p-6">
@@ -261,7 +265,7 @@ export function Journey() {
 }
 
 /* 04 — EXPÉRIENCE */
-function ExpRow({ e, i }: { e: (typeof experiences)[number]; i: number }) {
+function ExpRow({ e, i }: { e: Content["experiences"][number]; i: number }) {
   const { simple } = useReading();
   const [open, setOpen] = useState(i === 0);
   const o = open || simple;
@@ -279,7 +283,7 @@ function ExpRow({ e, i }: { e: (typeof experiences)[number]; i: number }) {
         <div className="grid transition-[grid-template-rows] duration-500" style={{ gridTemplateRows: o ? "1fr" : "0fr" }}>
           <div className="overflow-hidden">
             <ul className="space-y-2 px-6 pb-6 text-muted sm:pl-[4.5rem]">
-              {e.points.map((p) => <li key={p}>→ {p}</li>)}
+              {e.points.map((p, k) => <li key={`${p}-${k}`}>→ {p}</li>)}
             </ul>
           </div>
         </div>
@@ -289,11 +293,12 @@ function ExpRow({ e, i }: { e: (typeof experiences)[number]; i: number }) {
 }
 
 export function Experience() {
+  const { experiences } = useContent();
   const { simple } = useReading();
   return (
     <Section id="experience" n="04" title="Expérience">
       <div className={simple ? "grid items-start gap-4 md:grid-cols-2" : "space-y-4"}>
-        {experiences.map((e, i) => <ExpRow key={e.org} e={e} i={i} />)}
+        {experiences.map((e, i) => <ExpRow key={`${e.org}-${i}`} e={e} i={i} />)}
       </div>
     </Section>
   );
@@ -322,13 +327,14 @@ function Tilt({ children, className = "" }: { children: ReactNode; className?: s
 }
 
 export function Projects() {
+  const { projects } = useContent();
   const { simple } = useReading();
   return (
     <Section id="projets" n="05" title="Projets">
       <div className={simple ? "grid gap-5" : "grid gap-5 md:grid-cols-3"}>
         {projects.map((p, i) => (
           <Reveal
-            key={p.title}
+            key={`${p.title}-${i}`}
             v={simple ? "up" : "scale"}
             delay={i * 0.1}
             className={!simple && i === 0 ? "md:col-span-2 md:row-span-2" : ""}
@@ -340,14 +346,14 @@ export function Projects() {
                   <h3 className={`mt-2 font-display font-bold ${!simple && i === 0 ? "text-4xl sm:text-5xl" : "text-2xl"}`}>{p.title}</h3>
                   <p className="mt-4 text-muted">{p.text}</p>
                   <div className="mt-5 flex flex-wrap gap-2">
-                    {p.tech.map((t) => (
-                      <span key={t} className="rounded-full border border-white/10 px-3 py-1 font-mono text-xs text-muted">{t}</span>
+                    {p.tech.map((t, k) => (
+                      <span key={`${t}-${k}`} className="rounded-full border border-white/10 px-3 py-1 font-mono text-xs text-muted">{t}</span>
                     ))}
                   </div>
                 </div>
                 <div className={`flex flex-wrap items-center gap-3 ${simple ? "" : "mt-auto pt-8"}`}>
-                  {p.links.map((l) => (
-                    <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer"
+                  {p.links.map((l, k) => (
+                    <a key={`${l.href}-${k}`} href={l.href} target="_blank" rel="noopener noreferrer"
                       className="liquid-btn rounded-full border border-lime/50 px-4 py-2 text-sm text-lime">
                       {l.label} ↗
                     </a>
@@ -368,20 +374,31 @@ export function Projects() {
 /* 06 — RÉALISATIONS */
 export function Gallery() {
   const { simple } = useReading();
+  const { gallery } = useContent();
   return (
     <Section id="realisations" n="06" title="Réalisations">
       <div className={simple ? "grid grid-cols-2 gap-4 md:grid-cols-3" : "-mx-6 flex snap-x gap-5 overflow-x-auto px-6 pb-6"}>
         {gallery.map((g, i) => (
-          <Reveal key={g} v="scale" delay={i * 0.08} className={simple ? "" : "shrink-0 snap-start"}>
+          <Reveal key={`${g.title}-${i}`} v="scale" delay={i * 0.08} className={simple ? "" : "shrink-0 snap-start"}>
             <div className={`glass relative flex flex-col justify-end overflow-hidden rounded-3xl p-5 ${simple ? "h-40 w-full" : "h-72 w-64 sm:w-72"}`}>
-              <div
-                className="absolute inset-0 opacity-60"
-                style={{
-                  background: `radial-gradient(circle at ${30 + i * 15}% 20%, color-mix(in srgb, var(${i % 2 ? "--amber" : "--lime"}) 35%, transparent), transparent 60%)`,
-                }}
-              />
-              <p className="relative font-mono text-xs text-muted">photo à venir</p>
-              <p className="relative font-display text-xl">{g}</p>
+              {g.image ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={g.image} alt={g.title} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                </>
+              ) : (
+                <>
+                  <div
+                    className="absolute inset-0 opacity-60"
+                    style={{
+                      background: `radial-gradient(circle at ${30 + i * 15}% 20%, color-mix(in srgb, var(${i % 2 ? "--amber" : "--lime"}) 35%, transparent), transparent 60%)`,
+                    }}
+                  />
+                  <p className="relative font-mono text-xs text-muted">photo à venir</p>
+                </>
+              )}
+              <p className={`relative font-display text-xl ${g.image ? "text-white" : ""}`}>{g.title}</p>
             </div>
           </Reveal>
         ))}
@@ -664,9 +681,11 @@ function SceneBack({ id }: { id: string }) {
 }
 
 export function Hobbies() {
+  const { hobbies } = useContent();
   const { simple } = useReading();
   const [i, setI] = useState(0);
-  const h = hobbies[i];
+  const h = hobbies[Math.min(i, hobbies.length - 1)];
+  if (!h) return null;
   const art = h.id === "science" || h.id === "astro";
 
   return (
@@ -676,13 +695,13 @@ export function Hobbies() {
         {simple ? (
           <div className="grid gap-4 sm:grid-cols-2">
             {hobbies.map((x, k) => (
-              <Reveal key={x.id} delay={k * 0.08}>
+              <Reveal key={`${x.id}-${k}`} delay={k * 0.08}>
                 <div className="glass h-full rounded-3xl p-6">
                   <p className="font-mono text-xs tracking-widest text-lime">0{k + 1} · {x.label.toUpperCase()}</p>
                   <p className="mt-3 text-muted">{x.text}</p>
                   <ul className="mt-4 space-y-1 text-sm">
-                    {x.points.map((p) => (
-                      <li key={p.title}><span className="text-lime">•</span> {p.title}</li>
+                    {x.points.map((p, j) => (
+                      <li key={`${p.title}-${j}`}><span className="text-lime">•</span> {p.title}</li>
                     ))}
                   </ul>
                 </div>
@@ -693,7 +712,7 @@ export function Hobbies() {
           <>
             <div role="tablist" className="flex flex-wrap gap-2">
               {hobbies.map((x, k) => (
-                <button key={x.id} role="tab" aria-selected={k === i} onClick={() => setI(k)}
+                <button key={`${x.id}-${k}`} role="tab" aria-selected={k === i} onClick={() => setI(k)}
                   className={`rounded-full border px-5 py-2 text-sm transition ${k === i ? "border-lime bg-lime text-black" : "border-white/15 text-muted hover:border-lime hover:text-lime"}`}>
                   {x.label}
                 </button>
@@ -714,7 +733,7 @@ export function Hobbies() {
               </div>
               <div className="grid gap-4">
                 {h.points.map((p, k) => (
-                  <div key={p.title} className="rise glass rounded-3xl p-5" style={{ animationDelay: `${0.15 + k * 0.12}s` }}>
+                  <div key={`${p.title}-${k}`} className="rise glass rounded-3xl p-5" style={{ animationDelay: `${0.15 + k * 0.12}s` }}>
                     <p className="font-mono text-xs text-amber">0{k + 1}</p>
                     <p className="mt-1 font-display text-lg">{p.title}</p>
                     <p className="mt-1 text-sm text-muted">{p.text}</p>
@@ -731,12 +750,13 @@ export function Hobbies() {
 
 /* 08 — CONTACT */
 export function Contact() {
+  const { contact } = useContent();
   const { simple } = useReading();
   const send = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const body = `${f.get("message")}\n\n— ${f.get("name")} (${f.get("email")})`;
-    // Provisoire : ouvre le client mail. Resend (/api/contact) viendra à l'étape 6.
+    // Provisoire : ouvre le client mail. Resend (/api/contact) viendra plus tard.
     window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent("Contact depuis le portfolio")}&body=${encodeURIComponent(body)}`;
   };
   const field = "w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none transition focus:border-lime";
@@ -747,8 +767,8 @@ export function Contact() {
           <Words text="Un projet, une idée, une question ? Écrivez-moi." className={simple ? "text-2xl leading-snug" : "text-3xl leading-snug sm:text-4xl"} />
           <div className={`mt-8 flex gap-3 ${simple ? "flex-wrap" : "flex-col items-start"}`}>
             <a className="liquid-btn rounded-full border border-lime/50 px-5 py-2.5 text-lime" href={`mailto:${contact.email}`}>{simple ? "E-mail" : contact.email}</a>
-            {contact.whatsapp.map((w) => (
-              <a key={w.href} className="liquid-btn rounded-full border border-white/20 px-5 py-2.5" href={w.href} target="_blank" rel="noopener noreferrer">WhatsApp · {w.label}</a>
+            {contact.whatsapp.map((w, k) => (
+              <a key={`${w.href}-${k}`} className="liquid-btn rounded-full border border-white/20 px-5 py-2.5" href={w.href} target="_blank" rel="noopener noreferrer">WhatsApp · {w.label}</a>
             ))}
             <a className="liquid-btn rounded-full border border-white/20 px-5 py-2.5" href={contact.github} target="_blank" rel="noopener noreferrer">GitHub · JBGhost0</a>
           </div>

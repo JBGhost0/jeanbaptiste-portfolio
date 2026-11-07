@@ -204,3 +204,18 @@ export const contact = {
     { label: "01 52 60 49 80", href: "https://wa.me/2290152604980" },
   ],
 };
+
+const withDraft = <T extends object>(a: T[]) => a.map((x) => ({ ...x, draft: false }));
+
+// Valeurs par défaut utilisées tant que rien n'est enregistré dans la base
+export const defaults = {
+  about,
+  skills,
+  journey: withDraft(journey),
+  experiences: withDraft(experiences),
+  projects: withDraft(projects),
+  gallery: gallery.map((title) => ({ title, image: "", draft: false })),
+  hobbies,
+  contact,
+};
+export type Content = typeof defaults;
