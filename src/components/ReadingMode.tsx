@@ -5,48 +5,59 @@ type ReadingCtx = { simple: boolean; toggle: (x?: number, y?: number) => void };
 const Ctx = createContext<ReadingCtx>({ simple: false, toggle: () => {} });
 export const useReading = () => useContext(Ctx);
 
-// Couleurs de la vague d'eau (de la plus vive à la couleur finale du thème)
-const WATER = {
-  simple: ["#ffffff", "#dfe6f0", "#b9c5d6", "#eef2f7"],
-  dark: ["#bfe6ff", "#7fd3ff", "#26405c", "#050810"],
+// Trois couches versées l'une après l'autre. La dernière = couleur de fond du nouveau thème.
+const LIQUID = {
+  simple: ["#ffffff", "#c3cddb", "#eef2f7"],
+  dark: ["#bfe6ff", "#5fb8ea", "#050810"],
 };
-// Gouttelettes : [dx, dy] en vmin (dy négatif = vers le haut)
-const DROPS: [number, number][] = [
-  [-30, -55], [-18, -70], [-5, -80], [10, -72], [22, -60],
-  [-38, -40], [30, -45], [-12, -62], [4, -88], [16, -78],
+// Gouttes : [position %, largeur px, longueur px]
+const DRIPS: [number, number, number][] = [
+  [8, 16, 150], [19, 11, 230], [31, 20, 120], [44, 13, 270],
+  [57, 18, 170], [69, 12, 240], [81, 22, 140], [92, 14, 200],
 ];
 
-function WaterOverlay({ x, y, toSimple }: { x: number; y: number; toSimple: boolean }) {
-  const c = toSimple ? WATER.simple : WATER.dark;
-  const vars = { "--x": `${x}px`, "--y": `${y}px` } as CSSProperties;
+function Wave() {
   return (
-    <div aria-hidden className="paint-out pointer-events-none fixed inset-0 z-[200]" style={vars}>
-      <div className="jet" style={{ left: x - 9, top: 0, height: y, background: `linear-gradient(to top, ${c[1]}, ${c[0]})` }} />
-      {c.map((col, i) => (
-        <div key={col} className="paint-layer" style={{ background: col, animationDelay: `${0.45 + i * 0.12}s` }} />
+    <svg viewBox="0 0 2880 80" preserveAspectRatio="none" aria-hidden>
+      <path d="M0 40Q180 80 360 40T720 40T1080 40T1440 40T1800 40T2160 40T2520 40T2880 40V0H0Z" />
+    </svg>
+  );
+}
+
+function PourOverlay({ toSimple }: { toSimple: boolean }) {
+  const colors = toSimple ? LIQUID.simple : LIQUID.dark;
+  return (
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-[200] overflow-hidden">
+      {colors.map((c, i) => (
+        <div key={c} className="pour" style={{ "--c": c, animationDelay: `${i * 0.16}s` } as CSSProperties}>
+          <div className="pour-wave top"><Wave /></div>
+          <div className="pour-body" />
+          <div className="pour-wave bot"><Wave /></div>
+          <div className="pour-drips">
+            {DRIPS.filter((_, k) => k % (i + 1) === 0).map(([l, w, h], k) => (
+              <span
+                key={k}
+                className="drip"
+                style={
+                  {
+                    left: `${l}%`,
+                    "--w": `${w}px`,
+                    "--h": `${Math.round(h * (1 - i * 0.3))}px`,
+                    "--dl": `${0.25 + i * 0.16 + (k % 4) * 0.07}s`,
+                  } as CSSProperties
+                }
+              />
+            ))}
+          </div>
+        </div>
       ))}
-      {DROPS.map(([dx, dy], i) => {
-        const size = `${1.2 + (i % 3) * 0.6}vmin`;
-        return (
-          <div
-            key={i}
-            className="drop"
-            style={
-              {
-                left: x, top: y, width: size, height: size, background: c[i % 2],
-                "--dx": `${dx}vmin`, "--dy": `${dy}vmin`, animationDelay: `${0.1 + i * 0.03}s`,
-              } as CSSProperties
-            }
-          />
-        );
-      })}
     </div>
   );
 }
 
 export function ReadingProvider({ children }: { children: ReactNode }) {
   const [simple, setSimple] = useState(false);
-  const [water, setWater] = useState<{ x: number; y: number; to: boolean } | null>(null);
+  const [pour, setPour] = useState<{ to: boolean } | null>(null);
   const busy = useRef(false);
 
   useEffect(() => {
@@ -71,15 +82,15 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced || x === undefined || y === undefined) { apply(next); return; }
     busy.current = true;
-    setWater({ x, y, to: next });
-    setTimeout(() => apply(next), 1500);                 // le thème change sous la vague
-    setTimeout(() => { setWater(null); busy.current = false; }, 2750);
+    setPour({ to: next });
+    setTimeout(() => apply(next), 1600);   // écran entièrement recouvert : le thème change
+    setTimeout(() => { setPour(null); busy.current = false; }, 3000);
   };
 
   return (
     <Ctx.Provider value={{ simple, toggle }}>
       {children}
-      {water && <WaterOverlay x={water.x} y={water.y} toSimple={water.to} />}
+      {pour && <PourOverlay toSimple={pour.to} />}
     </Ctx.Provider>
   );
 }
