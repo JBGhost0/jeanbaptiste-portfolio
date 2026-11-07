@@ -1,15 +1,43 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { Component, useEffect, useState, type ReactNode } from "react";
 
 const HeroScene = dynamic(() => import("./HeroScene"), { ssr: false });
+
+// Si la 3D plante, on l'enlève sans casser la page
+class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(e: unknown) {
+    console.warn("3D désactivée :", e);
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+// La 3D n'est lancée que si le navigateur a un vrai WebGL (accéléré)
+function webglOk() {
+  try {
+    const c = document.createElement("canvas");
+    const gl =
+      c.getContext("webgl2", { failIfMajorPerformanceCaveat: true }) ||
+      c.getContext("webgl", { failIfMajorPerformanceCaveat: true });
+    return !!gl;
+  } catch {
+    return false;
+  }
+}
 
 export default function Hero() {
   const [show3D, setShow3D] = useState(false);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const t = setTimeout(() => setShow3D(true), 300); // le texte s'affiche d'abord
+    if (!webglOk()) return;
+    const t = setTimeout(() => setShow3D(true), 300);
     return () => clearTimeout(t);
   }, []);
 
@@ -21,7 +49,9 @@ export default function Hero() {
       />
       {show3D && (
         <div className="absolute inset-0">
-          <HeroScene />
+          <SceneBoundary>
+            <HeroScene />
+          </SceneBoundary>
         </div>
       )}
       <div className="pointer-events-none relative z-10 mx-auto w-full max-w-6xl px-6">
