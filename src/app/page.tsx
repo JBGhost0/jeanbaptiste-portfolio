@@ -16,8 +16,8 @@ export default function Home() {
       <Hobbies />
       <Contact />
       <footer className="border-t border-white/5 py-8 text-center font-mono text-xs text-muted">
-        © {new Date().getFullYear()} Jean-Baptiste Mahougnon DADA
-      </footer>
+  © 2026 Jean-Baptiste Mahougnon DADA
+</footer>
     </main>
   );
 }
