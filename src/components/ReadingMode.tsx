@@ -1,11 +1,51 @@
 "use client";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
-const Ctx = createContext({ simple: false, toggle: () => {} });
+type ReadingCtx = { simple: boolean; toggle: (x?: number, y?: number) => void };
+const Ctx = createContext<ReadingCtx>({ simple: false, toggle: () => {} });
 export const useReading = () => useContext(Ctx);
+
+const PAINT = {
+  simple: ["#ff6fa8", "#ffa8cc", "#ffd0e2", "#fff6fa"],
+  dark: ["#7fd3ff", "#c5d3e4", "#26405c", "#050810"],
+};
+const SPLATS: [number, number][] = [
+  [-60, -20], [-45, -45], [-20, -60], [-70, -5], [-30, -30], [-80, -35], [-10, -75], [-55, -60],
+];
+
+function PaintOverlay({ x, y, toSimple }: { x: number; y: number; toSimple: boolean }) {
+  const colors = toSimple ? PAINT.simple : PAINT.dark;
+  const vars = { "--x": `${x}px`, "--y": `${y}px` } as CSSProperties;
+  return (
+    <div aria-hidden className="paint-out pointer-events-none fixed inset-0 z-[200]" style={vars}>
+      {colors.map((c, i) => (
+        <div key={c} className="paint-layer" style={{ background: c, animationDelay: `${i * 0.12}s` }} />
+      ))}
+      {SPLATS.map(([dx, dy], i) => {
+        const size = `${4 + (i % 3) * 2}vmin`;
+        return (
+          <div
+            key={i}
+            className="splat"
+            style={
+              {
+                left: x, top: y, width: size, height: size,
+                background: colors[i % 2],
+                "--dx": `${dx}vmin`, "--dy": `${dy}vmin`,
+                animationDelay: `${i * 0.04}s`,
+              } as CSSProperties
+            }
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 export function ReadingProvider({ children }: { children: ReactNode }) {
   const [simple, setSimple] = useState(false);
+  const [paint, setPaint] = useState<{ x: number; y: number; to: boolean } | null>(null);
+  const busy = useRef(false);
 
   useEffect(() => {
     let saved: string | null = null;
@@ -18,20 +58,38 @@ export function ReadingProvider({ children }: { children: ReactNode }) {
     document.documentElement.dataset.simple = String(simple);
   }, [simple]);
 
-  const toggle = () => {
-    const next = !simple;
+  const apply = (next: boolean) => {
     setSimple(next);
     try { localStorage.setItem("simple", next ? "1" : "0"); } catch {}
   };
 
-  return <Ctx.Provider value={{ simple, toggle }}>{children}</Ctx.Provider>;
+  const toggle = (x?: number, y?: number) => {
+    if (busy.current) return;
+    const next = !simple;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced || x === undefined || y === undefined) { apply(next); return; }
+    busy.current = true;
+    setPaint({ x, y, to: next });
+    setTimeout(() => apply(next), 1000);          // le thème change sous la peinture
+    setTimeout(() => { setPaint(null); busy.current = false; }, 2100);
+  };
+
+  return (
+    <Ctx.Provider value={{ simple, toggle }}>
+      {children}
+      {paint && <PaintOverlay x={paint.x} y={paint.y} toSimple={paint.to} />}
+    </Ctx.Provider>
+  );
 }
 
 export function ModeToggle() {
   const { simple, toggle } = useReading();
   return (
     <button
-      onClick={toggle}
+      onClick={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        toggle(r.left + r.width / 2, r.top + r.height / 2);
+      }}
       aria-pressed={simple}
       className="glass fixed bottom-5 right-5 z-[90] flex items-center gap-2 rounded-full px-4 py-2.5 text-sm transition hover:border-lime/60"
     >
@@ -41,10 +99,46 @@ export function ModeToggle() {
   );
 }
 
+// Petits points flottants (positions fixes, pas d'aléatoire)
+const DOTS = [
+  [12, 22, 10], [78, 14, 14], [90, 52, 8], [30, 68, 12], [64, 82, 9], [8, 88, 11],
+];
+
 export function Ambient() {
-  const blob = (extra: React.CSSProperties) => ({
-    width: "60vw", height: "60vw", ...extra,
-  });
+  const { simple } = useReading();
+
+  if (simple) {
+    return (
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse at 20% 0%, #ffe3ef, transparent 55%), radial-gradient(ellipse at 90% 100%, #ffd7e8, transparent 50%)",
+          }}
+        />
+        <div className="liquid" style={{ width: "46vmax", height: "46vmax", left: "-12vmax", top: "8vh" }} />
+        <div className="liquid" style={{ width: "40vmax", height: "40vmax", right: "-14vmax", top: "38vh", animationDelay: "-9s", animationDuration: "34s" }} />
+        <div className="liquid" style={{ width: "36vmax", height: "36vmax", left: "28vw", bottom: "-22vmax", animationDelay: "-17s", animationDuration: "31s" }} />
+        <div className="sheen" />
+        {DOTS.map(([l, t, s], i) => (
+          <span
+            key={i}
+            className="floaty absolute rounded-full"
+            style={
+              {
+                left: `${l}%`, top: `${t}%`, width: s, height: s,
+                background: "rgba(214,63,130,0.28)",
+                "--d": `${8 + i}s`, "--dl": `${-i * 1.7}s`, "--fx": "8px",
+              } as CSSProperties
+            }
+          />
+        ))}
+      </div>
+    );
+  }
+
+  const blob = (extra: CSSProperties): CSSProperties => ({ width: "60vw", height: "60vw", ...extra });
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <div
@@ -56,9 +150,9 @@ export function Ambient() {
           maskImage: "radial-gradient(ellipse at center,#000 30%,transparent 80%)",
         }}
       />
-      <div className="blob" style={blob({ left: "-10%", top: "10%", background: "radial-gradient(circle,rgba(182,255,60,.14),transparent 65%)" })} />
-      <div className="blob" style={blob({ right: "-15%", top: "45%", animationDelay: "-8s", background: "radial-gradient(circle,rgba(255,181,71,.10),transparent 65%)" })} />
-      <div className="blob" style={blob({ left: "20%", bottom: "-25%", animationDelay: "-15s", background: "radial-gradient(circle,rgba(182,255,60,.08),transparent 65%)" })} />
+      <div className="blob" style={blob({ left: "-10%", top: "10%", background: "radial-gradient(circle,rgba(127,211,255,.14),transparent 65%)" })} />
+      <div className="blob" style={blob({ right: "-15%", top: "45%", animationDelay: "-8s", background: "radial-gradient(circle,rgba(200,215,235,.10),transparent 65%)" })} />
+      <div className="blob" style={blob({ left: "20%", bottom: "-25%", animationDelay: "-15s", background: "radial-gradient(circle,rgba(127,211,255,.08),transparent 65%)" })} />
     </div>
   );
 }

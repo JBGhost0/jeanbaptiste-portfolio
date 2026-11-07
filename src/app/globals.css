@@ -90,3 +90,196 @@ body { overflow-x: clip; }
 [data-simple="true"] .morph { animation: none !important; border-radius: 2rem; }
 [data-simple="true"] * { animation-duration: 0s !important; animation-delay: 0s !important; transition-duration: 0s !important; transition-delay: 0s !important; scroll-behavior: auto !important; }
 [data-simple="true"] body { font-size: 1.1rem; line-height: 1.75; }
+
+@import "tailwindcss";
+
+:root {
+  --bg: #050810;
+  --fg: #eef3f9;
+  --muted: #8e9bb0;
+  --lime: #7fd3ff;   /* accent principal (bleu ciel) */
+  --amber: #d5deea;  /* accent secondaire (argent) */
+}
+
+/* Lecture simple : blanc et rose chrome */
+[data-simple="true"] {
+  --bg: #fff6fa;
+  --fg: #2b1d26;
+  --muted: #7a6571;
+  --lime: #d63f82;
+  --amber: #9a8793;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-lime: var(--lime);
+  --color-amber: var(--amber);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-space);
+  --font-mono: var(--font-jb);
+}
+
+html { background: var(--bg); }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+::selection { background: var(--lime); color: #000; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: none; }
+}
+.rise { opacity: 0; animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+
+/* Texte chrome */
+.chrome-text {
+  background: linear-gradient(180deg, #ffffff 0%, #a9bdd3 52%, #eef5ff 100%);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
+}
+[data-simple="true"] .chrome-text {
+  background-image: linear-gradient(180deg, #ff9ac3 0%, #c93a78 55%, #ffb9d6 100%);
+}
+
+/* Verre */
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 20px 50px -20px rgba(0, 0, 0, 0.6);
+}
+.glass-hover { transition: border-color 0.3s, transform 0.3s; }
+.glass-hover:hover { border-color: color-mix(in srgb, var(--lime) 55%, transparent); transform: translateY(-2px); }
+
+/* Formes liquides */
+@keyframes morph {
+  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+}
+.morph { animation: morph 9s ease-in-out infinite; }
+
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(8vw, 6vh, 0) scale(1.25); }
+}
+.blob { position: absolute; border-radius: 50%; animation: drift 22s ease-in-out infinite alternate; will-change: transform; }
+
+/* Bouton liquide */
+.liquid-btn { position: relative; overflow: hidden; isolation: isolate; transition: color 0.4s; display: inline-block; text-align: center; }
+.liquid-btn::before {
+  content: ""; position: absolute; left: -10%; right: -10%; top: 0; height: 220%;
+  background: var(--lime); border-radius: 45% 55% 0 0 / 18% 18% 0 0;
+  transform: translateY(100%); transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); z-index: -1;
+}
+.liquid-btn:hover::before { transform: translateY(-12%); }
+.liquid-btn:hover { color: #000; }
+
+/* Carte inclinable */
+.tilt { transition: transform 0.2s ease-out; }
+.tilt::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.12), transparent 50%);
+}
+.tilt:hover::after { opacity: 1; }
+
+/* ---------- Animations des passe-temps ---------- */
+@keyframes floaty {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(var(--r, 0deg)); }
+  50% { transform: translate3d(var(--fx, 12px), -26px, 0) rotate(calc(var(--r, 0deg) + 16deg)); }
+}
+.floaty { animation: floaty var(--d, 7s) ease-in-out infinite; animation-delay: var(--dl, 0s); }
+
+@keyframes sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(7deg); } }
+.blade { transform-origin: bottom center; animation: sway var(--d, 4s) ease-in-out infinite; animation-delay: var(--dl, 0s); }
+
+@keyframes twinkle { 0%, 100% { opacity: 0.15; } 50% { opacity: 1; } }
+.twinkle { animation: twinkle 3s ease-in-out infinite; animation-delay: var(--dl, 0s); }
+
+@keyframes turn { to { transform: rotate(360deg); } }
+.spin-slow { animation: turn 14s linear infinite; }
+
+@keyframes shoot {
+  0% { transform: translate(0, 0) rotate(28deg); opacity: 0; }
+  8% { opacity: 1; }
+  30%, 100% { transform: translate(-260px, 140px) rotate(28deg); opacity: 0; }
+}
+.shoot {
+  width: 90px; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--lime));
+  animation: shoot 6s linear infinite;
+}
+
+@keyframes bird { from { transform: translate(-40px, 0); } to { transform: translate(100vw, -30px); } }
+.bird { animation: bird 24s linear infinite; }
+
+/* ---------- Lecture simple : fond verre liquide ---------- */
+@keyframes liquid {
+  0% { transform: translate3d(0, 0, 0) scale(1, 1) rotate(0deg); }
+  33% { transform: translate3d(4vw, 3vh, 0) scale(1.08, 0.94) rotate(40deg); }
+  66% { transform: translate3d(-3vw, 6vh, 0) scale(0.94, 1.1) rotate(80deg); }
+  100% { transform: translate3d(2vw, -3vh, 0) scale(1.05, 1) rotate(130deg); }
+}
+.liquid {
+  position: absolute; border-radius: 58% 42% 55% 45% / 48% 55% 45% 52%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.95) 0, rgba(255, 255, 255, 0) 22%),
+    radial-gradient(circle at 60% 60%, rgba(255, 150, 195, 0.5), rgba(255, 170, 205, 0.18) 60%, rgba(255, 200, 225, 0.05) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 0 40px rgba(255, 255, 255, 0.7), inset -20px -30px 60px rgba(214, 63, 130, 0.12);
+  animation: liquid 28s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes sweep { from { transform: translateX(-60%); } to { transform: translateX(60%); } }
+.sheen {
+  position: absolute; inset: 0; width: 200%; left: -50%;
+  background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.55) 50%, transparent 60%);
+  animation: sweep 16s ease-in-out infinite alternate;
+}
+
+[data-simple="true"] .scene3d,
+[data-simple="true"] .cursor-ring { display: none !important; }
+[data-simple="true"] .glass {
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 1px 0 #fff, 0 14px 40px -20px rgba(214, 63, 130, 0.35);
+}
+[data-simple="true"] .liquid-btn:hover { color: #fff; }
+[data-simple="true"] body { font-size: 1.05rem; line-height: 1.7; }
+
+/* Les anciennes classes « blanc transparent » restent visibles sur fond clair */
+[data-simple="true"] [class*="border-white"] { border-color: rgba(150, 70, 110, 0.2); }
+[data-simple="true"] [class*="bg-white"] { background-color: rgba(255, 255, 255, 0.7); }
+
+/* ---------- Jet de peinture (changement de thème) ---------- */
+.paint-layer {
+  position: absolute; inset: 0;
+  clip-path: circle(0px at var(--x) var(--y));
+  animation: paint-in 0.9s cubic-bezier(0.55, 0.1, 0.25, 1) forwards;
+}
+@keyframes paint-in { to { clip-path: circle(150vmax at var(--x) var(--y)); } }
+.paint-out { animation: paint-out 0.7s ease 1.25s forwards; }
+@keyframes paint-out { to { opacity: 0; } }
+.splat { position: absolute; border-radius: 50%; animation: splat 0.9s cubic-bezier(0.2, 0.8, 0.3, 1) forwards; }
+@keyframes splat {
+  0% { transform: translate(0, 0) scale(0.3); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1.6); opacity: 0; }
+}
+
+/* Respect du réglage « réduire les animations » */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

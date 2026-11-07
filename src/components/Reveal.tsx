@@ -35,17 +35,17 @@ export default function Reveal({
 }: { children: ReactNode; v?: V; delay?: number; className?: string }) {
   const { ref, seen } = useInView();
   const { simple } = useReading();
-  const on = seen || simple;
   return (
     <div
       ref={ref}
       className={className}
       style={{
-        opacity: on ? 1 : 0,
-        transform: on ? "none" : FROM[v],
-        filter: v === "blur" && !on ? "blur(12px)" : "none",
+        opacity: seen ? 1 : 0,
+        // En lecture simple : simple fondu discret
+        transform: seen ? "none" : simple ? "translateY(14px)" : FROM[v],
+        filter: !simple && v === "blur" && !seen ? "blur(12px)" : "none",
         transition: simple
-          ? "none"
+          ? `opacity .7s ease ${delay}s, transform .7s ease ${delay}s`
           : `opacity .9s ease ${delay}s, transform .9s cubic-bezier(.2,.7,.2,1) ${delay}s, filter .9s ease ${delay}s`,
       }}
     >
@@ -54,11 +54,17 @@ export default function Reveal({
   );
 }
 
-// Texte révélé mot par mot (masque qui glisse)
+// Texte révélé mot par mot (fondu simple en lecture simple)
 export function Words({ text, className = "" }: { text: string; className?: string }) {
   const { ref, seen } = useInView();
   const { simple } = useReading();
-  const on = seen || simple;
+  if (simple) {
+    return (
+      <div ref={ref} className={className} style={{ opacity: seen ? 1 : 0, transition: "opacity .8s ease" }}>
+        {text}
+      </div>
+    );
+  }
   return (
     <div ref={ref} className={className}>
       {text.split(" ").map((w, i) => (
@@ -66,8 +72,8 @@ export function Words({ text, className = "" }: { text: string; className?: stri
           <span
             className="inline-block"
             style={{
-              transform: on ? "none" : "translateY(110%)",
-              transition: simple ? "none" : `transform .8s cubic-bezier(.2,.7,.2,1) ${i * 0.03}s`,
+              transform: seen ? "none" : "translateY(110%)",
+              transition: `transform .8s cubic-bezier(.2,.7,.2,1) ${i * 0.03}s`,
             }}
           >
             {w}{"\u00A0"}
