@@ -1,4 +1,4 @@
-import { createHmac, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 
 const COOKIE = "admin_session";
@@ -17,6 +17,14 @@ const safeEq = (a: string, b: string) => {
 };
 
 export function verifyPassword(pw: string) {
+  // Option simple : mot de passe en clair dans ADMIN_PASSWORD (serveur uniquement)
+  const plain = process.env.ADMIN_PASSWORD;
+  if (plain) {
+    const h = (s: string) => createHash("sha256").update(s).digest("hex");
+    return safeEq(h(pw.trim()), h(plain.trim()));
+  }
+
+  // Ancienne option : hash sel:hash
   const stored = process.env.ADMIN_PASSWORD_HASH;
   if (!stored) return false;
   const [salt, hash] = stored.split(":");
