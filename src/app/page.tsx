@@ -1,7 +1,7 @@
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import ContentProvider from "@/components/ContentProvider";
-import { About, Skills, Journey, Experience, Projects, Gallery, Lab, Hobbies, Contact } from "@/components/Sections";
+import { About, Skills, Journey, Experience, Projects, Gallery, Hobbies, Contact } from "@/components/Sections";
 import { defaults, type Content } from "@/data/content";
 
 // Les éléments avec draft: true sont cachés
@@ -26,7 +26,6 @@ export default function Home() {
         <Experience />
         <Projects />
         <Gallery />
-        <Lab />
         <Hobbies />
         <Contact />
         <footer className="border-t border-white/5 py-8 text-center font-mono text-xs text-muted">

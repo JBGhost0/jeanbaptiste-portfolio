@@ -8,7 +8,6 @@ import type { Content } from "@/data/content";
 import { useContent } from "./ContentProvider";
 
 const Molecule3D = dynamic(() => import("./Molecule3D"), { ssr: false });
-const Lab3D = dynamic(() => import("./Lab3D"), { ssr: false });
 
 type Group = Content["skills"]["agro"][number];
 
@@ -408,38 +407,6 @@ export function Gallery() {
 }
 
 /* LABORATOIRE : scène 3D interactive entre Réalisations et Passe-temps */
-export function Lab() {
-  const { simple } = useReading();
-  if (simple) return null;
-  const h = "h-[380px] sm:h-[460px]";
-  return (
-    <section id="lab" className="relative mx-auto max-w-6xl px-6 py-20">
-      <Reveal v="blur">
-        <p className="font-mono text-xs tracking-[0.3em] text-lime">LABORATOIRE / CODE × VIVANT</p>
-      </Reveal>
-      <Reveal v="scale">
-        <div className="glass relative mt-6 overflow-hidden rounded-3xl">
-          <Safe3D
-            className={`lab ${h}`}
-            fallback={
-              <div className={`flex items-center justify-center p-8 text-center text-sm text-muted ${h}`}>
-                Scène 3D interactive (nécessite WebGL)
-              </div>
-            }
-          >
-            <Lab3D />
-          </Safe3D>
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-2 p-5">
-            <p className="font-mono text-xs text-muted">
-              Sphères = atomes · cubes = pixels de code
-            </p>
-            <p className="font-mono text-xs text-lime">Glissez pour tourner · touchez pour libérer des particules</p>
-          </div>
-        </div>
-      </Reveal>
-    </section>
-  );
-}
 
 /* 07 — PASSE-TEMPS */
 function Stars() {
