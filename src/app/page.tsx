@@ -2,10 +2,19 @@ import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import ContentProvider from "@/components/ContentProvider";
 import { About, Skills, Journey, Experience, Projects, Gallery, Lab, Hobbies, Contact } from "@/components/Sections";
-import { getContent } from "@/lib/content";
+import { defaults, type Content } from "@/data/content";
 
-export default async function Home() {
-  const content = await getContent();
+// Les éléments avec draft: true sont cachés
+const live = <T,>(a: T[]): T[] => a.filter((x) => (x as { draft?: boolean }).draft !== true);
+const content: Content = {
+  ...defaults,
+  journey: live(defaults.journey),
+  experiences: live(defaults.experiences),
+  projects: live(defaults.projects),
+  gallery: live(defaults.gallery),
+};
+
+export default function Home() {
   return (
     <ContentProvider value={content}>
       <main>
